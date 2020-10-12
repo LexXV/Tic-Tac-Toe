@@ -15,7 +15,7 @@ stages:
   is_completed: true
 - id: 258
   step: 5400
-  is_completed: false
+  is_completed: true
 - id: 259
   step: 5401
   is_completed: false
@@ -54,7 +54,7 @@ topics:
     theory_id: 3523
   2:
   - title: IDE
-    theory_id: 3805
+    theory_id: 10996
   - title: Boolean and logical operations
     theory_id: 3516
   - title: Relational operators
