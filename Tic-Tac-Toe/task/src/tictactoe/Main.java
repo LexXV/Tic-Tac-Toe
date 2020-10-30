@@ -1,122 +1,156 @@
 package tictactoe;
-import java.util.*;
 
-public class Main {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+import java.util.Scanner;
 
-        System.out.println("Enter cells:");
-        char[] array = scanner.nextLine().toCharArray();
-        char[][] field = new char[3][3];
+class Game {
+    private final Scanner scanner = new Scanner(System.in);
+    private final char[][] field = new char[3][3];
+    private char currentPlayer = 'X';
 
-        int xs = 0;
-        int os = 0;
-        boolean xxx = false;
-        boolean ooo = false;
+    private enum State {
+        X_WINS,
+        O_WINS,
+        DRAW,
+        NOT_FINISHED,
+        IMPOSSIBLE
+    }
 
-        // fill up the field, count X's & O's
-        for (int i = 0; i < 9; i++) {
-            field[i / 3][i % 3] = array[i];
-
-            if (array[i] == 'X') {
-                xs++;
-            } else if (array[i] == 'O') {
-                os++;
-            }
+    public void start() {
+        while (getState() == State.NOT_FINISHED) {
+            printField();
+            move();
+            switchPlayer();
         }
+        printField();
+        printState();
+    }
 
-        // check if row or column or any of diagonals is win for someone
+    private void printField() {
+        System.out.println("---------");
         for (int i = 0; i < 3; i++) {
-            int row = 0;
-            int clm = 0;
-            int mainDiag = 0;
-            int antiDiag = 0;
-
+            System.out.print("| ");
             for (int j = 0; j < 3; j++) {
-                row += field[i][j];
-                clm += field[j][i];
-                mainDiag += field[j][j];
-                antiDiag += field[j][2-j];
+                char cell = field[i][j];
+                if (cell == 0 || cell == '_') {
+                    cell = ' ';
+                }
+                System.out.print(cell + " ");
             }
-
-            // ASCII value for X is 88 (X+X+X is 264)
-            // ASCII value for O is 79 (O+O+O is 237)
-            xxx = xxx || row == 264 || clm == 264 || mainDiag == 264 || antiDiag == 264;
-            ooo = ooo || row == 237 || clm == 237 || mainDiag == 237 || antiDiag == 237;
+            System.out.println("|");
         }
-        printField(field);
-
-        String result = Math.abs(xs-os) > 1 || xxx && ooo ? "Impossible"
-                : xxx ? "X wins"
-                : ooo ? "O wins"
-                : xs + os == 9 ? "Draw"
-                : "Game not finished";
-
-        //System.out.println(result);
-
-        System.out.println("Enter the coordinates:");
-        enterCoordinates(field);
-
-        printField(field);
-    }
-
-    static void printField(char[][] field) {
-        System.out.println("---------");
-        System.out.println("| " + field[0][0] + " " + field[0][1] + " " + field[0][2] + " |");
-        System.out.println("| " + field[1][0] + " " + field[1][1] + " " + field[1][2] + " |");
-        System.out.println("| " + field[2][0] + " " + field[2][1] + " " + field[2][2] + " |");
         System.out.println("---------");
     }
 
-    static char[][] enterCoordinates(char[][] field) {
-        while (true) {
-            String[] coordinates = getCoordinates();
-            if (coordinates[0].equals("String") || coordinates[1].equals("String")) {
+    private void move() {
+        int x, y;
+
+        do {
+            System.out.print("Enter the coordinates: ");
+            String[] coordinates = scanner.nextLine().trim().split("\\s+");
+            try {
+                x = Integer.parseInt(coordinates[0]);
+                y = Integer.parseInt(coordinates[1]);
+            } catch (Exception e) {
                 System.out.println("You should enter numbers!");
                 continue;
             }
 
-            int x = Integer.parseInt(coordinates[0]);
-            int y = Integer.parseInt(coordinates[1]);
             if (x < 1 || x > 3 || y < 1 || y > 3) {
                 System.out.println("Coordinates should be from 1 to 3!");
-            } else {
-                boolean occupied = checkCell(x, y, field);
-                if (occupied) {
-                    System.out.println("This cell is occupied! Choose another one!");
-                } else {
-                    field[3 - y][x - 1] = 'X';
-                    return field;
-                }
+                continue;
             }
-        }
+
+            int row = 3 - y;
+            int col = x - 1;
+
+            if (field[row][col] != 0) {
+                System.out.println("This cell is occupied! Choose another one!");
+                continue;
+            }
+
+            field[row][col] = currentPlayer;
+            break;
+        } while (true);
     }
 
-    static String[] getCoordinates() {
-        Scanner scanner = new Scanner(System.in);
-
-        String[] coordinates = new String[2];
-        for (int i = 0; i < 2; i++) {
-            if (scanner.hasNextInt()) {
-                coordinates[i] = String.valueOf(scanner.nextInt());
-            } else if (scanner.hasNext()) {
-                coordinates[i] = "String";
-                return coordinates;
-            }
-        }
-        return coordinates;
+    private void switchPlayer() {
+        currentPlayer = currentPlayer == 'X' ? 'O' : 'X';
     }
 
-    static boolean checkCell(int x, int y, char[][] field) {
+    private State getState() {
+        String[] rows = new String[] {"", "", ""};
+        String[] columns = new String[] {"", "", ""};
+        String[] diagonals = new String[] {"", ""};
+        int xs = 0;
+        int os = 0;
+
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                if (i == 3 - y && j == x - 1) {
-                    if (field[i][j] == 'X' || field[i][j] == 'O') {
-                        return true;
-                    }
+                char cell = field[i][j];
+                if (cell == 'X') {
+                    xs++;
+                } else if (cell == 'O') {
+                    os++;
+                }
+
+                rows[i] += cell;
+                columns[j] += cell;
+
+                if (i == j) {
+                    diagonals[0] += cell;
+                }
+                if (i + j == 2) {
+                    diagonals[1] += cell;
                 }
             }
         }
-        return false;
+
+        String combined = String.join(",", rows) + "," + String.join(",", columns) + "," + String.join(",", diagonals);
+        boolean xWins = combined.contains("XXX");
+        boolean oWins = combined.contains("OOO");
+
+        if (Math.abs(os - xs) > 1 || (xWins && oWins)) {
+            return State.IMPOSSIBLE;
+        }
+
+        if (xWins) {
+            return State.X_WINS;
+        } else if (oWins) {
+            return State.O_WINS;
+        }
+
+        if (os + xs < 9) {
+            return State.NOT_FINISHED;
+        }
+
+        return State.DRAW;
+    }
+
+    public void printState() {
+        switch (getState()) {
+            case X_WINS:
+                System.out.println("X wins");
+                break;
+            case O_WINS:
+                System.out.println("O wins");
+                break;
+            case DRAW:
+                System.out.println("Draw");
+                break;
+            case NOT_FINISHED:
+                System.out.println("Game not finished");
+                break;
+            case IMPOSSIBLE:
+                System.out.println("Impossible");
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        new Game().start();
     }
 }
